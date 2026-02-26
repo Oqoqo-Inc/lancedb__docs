@@ -276,3 +276,15 @@ for the document that are not in the new data, with `when_not_matched_by_source_
 We suggest the best batch size to be 500k for optimal performance.
 </Tip>
 
+<Warning title="Large merge_insert payloads and memory usage">
+On very large payloads (for example, batches larger than ~10 MB), `merge_insert` can exhaust the default memory pool used by the underlying Lance engine and fail with an out-of-memory error.
+
+If you run into crashes or seemingly random failures during large `merge_insert` operations, you can increase the Lance memory pool size by setting the `LANCE_MEM_POOL_SIZE` environment variable (in bytes) before starting your application. For example, the following configuration allocates a 1 GiB memory pool:
+
+```bash
+export LANCE_MEM_POOL_SIZE=1073741824
+```
+
+Use this option only when you have enough RAM available on the host, and monitor your process memory usage when tuning this value.
+</Warning>
+
