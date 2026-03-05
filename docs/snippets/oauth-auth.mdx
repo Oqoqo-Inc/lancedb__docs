@@ -1,0 +1,59 @@
+export const PyOAuthAuth = `
+from typing import Dict, Any
+import os
+from lancedb.remote.header import OAuthProvider
+import lancedb
+
+# Example token fetcher that calls your IdP or OAuth server
+# and returns a dict with 'access_token' and optional 'expires_in'.
+def fetch_token() -> Dict[str, Any]:
+    # Replace this placeholder with your actual OAuth client logic
+    # (client credentials, refresh tokens, workload identity, etc.)
+    response = {
+        "access_token": os.environ["LANCEDB_OAUTH_TOKEN"],
+        "expires_in": 3600,
+    }
+    return response
+
+# Create a provider that will automatically refresh the token
+# a few minutes before it expires (default: 300 seconds).
+oauth_provider = OAuthProvider(token_fetcher=fetch_token, refresh_buffer_seconds=300)
+
+# Connect to LanceDB Cloud/Enterprise using OAuth/Bearer auth
+uri = "db://your-database-uri"
+region = "us-east-1"
+
+db = lancedb.connect(
+    uri=uri,
+    region=region,
+    header_provider=oauth_provider,
+)
+`;
+
+export const TsOAuthAuth = `
+import { connect, OAuthHeaderProvider, type TokenResponse } from "@lancedb/lancedb";
+
+// Example token fetcher that calls your IdP or OAuth server
+// and returns { accessToken, expiresIn }.
+async function fetchToken(): Promise<TokenResponse> {
+  // Replace this placeholder with your actual OAuth client logic
+  // (client credentials, refresh tokens, workload identity, etc.)
+  const accessToken = process.env.LANCEDB_OAUTH_TOKEN!;
+  return { accessToken, expiresIn: 3600 };
+}
+
+// Create a provider that will automatically refresh the token
+// a few minutes before it expires (default: 300 seconds).
+const oauthProvider = new OAuthHeaderProvider(fetchToken, 300);
+
+// Ensure the first token is fetched before use
+await oauthProvider.refreshToken();
+
+// Connect to LanceDB Cloud/Enterprise using OAuth/Bearer auth
+const dbUri = process.env.LANCEDB_URI || "db://your-database-uri";
+const region = process.env.LANCEDB_REGION || "us-east-1";
+
+const db = await connect(dbUri, {
+  region,
+}, undefined, oauthProvider);
+`;

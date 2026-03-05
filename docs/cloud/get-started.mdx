@@ -29,8 +29,10 @@ npm install @lancedb/lancedb
 
 ## 2. Connect to LanceDB
 
-- For [LanceDB Cloud](/cloud/) users, the database URI (which starts with `db://`) and API key can both be retrieved from the LanceDB Cloud UI. 
+- For [LanceDB Cloud](/cloud/) users, the database URI (which starts with `db://`) and API key can both be retrieved from the LanceDB Cloud UI.
 - For [LanceDB Enterprise](/enterprise/) users, please [contact us](mailto:contact@lancedb.com) to obtain your database URI, API key, and `host_override` URL.
+
+By default, most examples use `api_key`-based authentication. For production and enterprise deployments, you can also use OAuth/Bearer tokens via the SDK header providers.
 
 <CodeGroup>
 ```py Python icon=Python
@@ -39,19 +41,12 @@ import numpy as np
 import pyarrow as pa
 import os
 
-# Connect to LanceDB Cloud/Enterprise
-uri = "db://your-database-uri"
-api_key = "your-api-key"
-region = "us-east-1"
-
-# (Optional) For LanceDB Enterprise, set the host override to your enterprise endpoint
-host_override = os.environ.get("LANCEDB_HOST_OVERRIDE")
-
+# Connect to LanceDB Cloud/Enterprise with API key
 db = lancedb.connect(
-    uri=uri,
-    api_key=api_key,
-    region=region,
-    host_override=host_override
+    uri="db://your-database-uri",
+    api_key="your-api-key",
+    region="us-east-1",
+    host_override=os.environ.get("LANCEDB_HOST_OVERRIDE"),  # Enterprise only
 )
 ```
 
@@ -59,19 +54,76 @@ db = lancedb.connect(
 import { connect, Index, Table } from '@lancedb/lancedb';
 import { FixedSizeList, Field, Float32, Schema, Utf8 } from 'apache-arrow';
 
-// Connect to LanceDB Cloud/Enterprise
+// Connect to LanceDB Cloud/Enterprise with API key
 const dbUri = process.env.LANCEDB_URI || 'db://your-database-uri';
 const apiKey = process.env.LANCEDB_API_KEY;
 const region = process.env.LANCEDB_REGION;
-
-// (Optional) For LanceDB Enterprise, set the host override to your enterprise endpoint
-const hostOverride = process.env.LANCEDB_HOST_OVERRIDE;
+const hostOverride = process.env.LANCEDB_HOST_OVERRIDE; // Enterprise only
 
 const db = await connect(dbUri, {
     apiKey,
     region,
-    hostOverride
+    hostOverride,
 });
+```
+</CodeGroup>
+
+### Optional: OAuth/Bearer authentication via header providers
+
+For environments where you obtain short-lived access tokens from an IdP or OAuth server, you can configure the SDKs to send `Authorization: Bearer` headers automatically.
+
+First, import the OAuth header providers and configure token fetchers in your application code. The examples below are also available as snippets from `/docs/snippets/oauth-auth.mdx`.
+
+<CodeGroup>
+```py Python icon=Python
+from typing import Dict, Any
+import os
+import lancedb
+from lancedb.remote.header import OAuthProvider
+
+# Example token fetcher that calls your IdP or OAuth server
+# and returns a dict with 'access_token' and optional 'expires_in'.
+def fetch_token() -> Dict[str, Any]:
+    response = {
+        "access_token": os.environ["LANCEDB_OAUTH_TOKEN"],
+        "expires_in": 3600,
+    }
+    return response
+
+# Create a provider that will automatically refresh the token
+oauth_provider = OAuthProvider(token_fetcher=fetch_token, refresh_buffer_seconds=300)
+
+# Connect using OAuth/Bearer auth
+db = lancedb.connect(
+    uri="db://your-database-uri",
+    region="us-east-1",
+    header_provider=oauth_provider,
+)
+```
+
+```ts TypeScript icon=js expandable=true
+import { connect, OAuthHeaderProvider, type TokenResponse } from '@lancedb/lancedb';
+
+// Example token fetcher that calls your IdP or OAuth server
+// and returns { accessToken, expiresIn }.
+async function fetchToken(): Promise<TokenResponse> {
+  const accessToken = process.env.LANCEDB_OAUTH_TOKEN!;
+  return { accessToken, expiresIn: 3600 };
+}
+
+// Create a provider that will automatically refresh the token
+const oauthProvider = new OAuthHeaderProvider(fetchToken, 300);
+await oauthProvider.refreshToken();
+
+const dbUri = process.env.LANCEDB_URI || 'db://your-database-uri';
+const region = process.env.LANCEDB_REGION || 'us-east-1';
+
+const db = await connect(
+  dbUri,
+  { region },
+  undefined, // session
+  oauthProvider, // header provider
+);
 ```
 </CodeGroup>
 

@@ -20,10 +20,41 @@ please [contact us](mailto:support@lancedb.com).
 <Badge color="blue">Cloud</Badge>
 <Badge color="red">Enterprise</Badge>
 
-All HTTP requests to LanceDB APIs must contain an <u>x-api-key</u> header that specifies a valid API key and
-must be encoded as JSON or Arrow RPC.
+LanceDB supports two primary authentication mechanisms for Cloud and Enterprise:
 
-The tutorial below demonstrates how to connect to LanceDB Cloud using the REST API.
+- **API key authentication** using the `x-api-key` header (recommended for quickstarts, smaller projects, and individual usage).
+- **OAuth/Bearer token authentication** using the `Authorization: Bearer` header, typically integrated with an IdP or SSO provider (recommended for enterprise and production workloads).
+
+All HTTP requests to LanceDB APIs must contain one of these authentication headers and must be encoded as JSON or Arrow RPC.
+
+### API key authentication
+
+Use an `x-api-key` header with your LanceDB Cloud/Enterprise API key:
+
+```bash
+curl -X GET "https://{db}.{region}.api.lancedb.com/v1/tables" \
+   -H "Content-Type: application/json" \
+   -H "x-api-key: LANCEDB_API_KEY"
+```
+
+The tutorial below demonstrates how to connect to LanceDB Cloud using the REST API with `x-api-key` authentication.
+
+### OAuth/Bearer token authentication
+
+For enterprise and security-sensitive environments, you can use OAuth/Bearer tokens instead of static API keys. In this model, your application obtains an access token from your IdP or OAuth server and sends it to LanceDB in the `Authorization` header:
+
+```bash
+curl -X GET "https://{db}.{region}.api.lancedb.com/v1/tables" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+When using the LanceDB SDKs, you can configure this pattern using header providers:
+
+- **TypeScript**: `OAuthHeaderProvider` from `@lancedb/lancedb`, which accepts a token-fetching function and automatically refreshes the token before it expires.
+- **Python**: `OAuthProvider` from `lancedb.remote.header`, which wraps a token-fetching callable and handles thread-safe token refresh.
+
+See the **LanceDB Cloud Get Started** guide for end-to-end examples in Python and TypeScript using these providers.
 
 ### Get the API Key
 
