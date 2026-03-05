@@ -1,0 +1,56 @@
+export const PyOAuthAuth = """
+from typing import Dict, Any
+import os
+
+import lancedb
+from lancedb.remote.header import OAuthProvider
+
+
+def token_fetcher() -> Dict[str, Any]:
+    """Fetch an OAuth access token from an IdP or internal auth service.
+
+    In production, replace this placeholder with a real call to your identity
+    provider or token broker. The function must return a mapping with an
+    "access_token" key and, optionally, an "expires_in" field indicating
+    token lifetime in seconds.
+    """
+
+    access_token = os.environ.get("LANCEDB_OAUTH_ACCESS_TOKEN", "dummy-token")
+    return {"access_token": access_token, "expires_in": 3600}
+
+
+def connect_with_oauth_header_provider() -> None:
+    """Example connection using OAuthProvider for Authorization headers."""
+
+    uri = "db://your-database-uri"
+    region = "us-east-1"
+
+    oauth_provider = OAuthProvider(token_fetcher, refresh_buffer_seconds=300)
+
+    db = lancedb.connect(uri=uri, region=region, header_provider=oauth_provider)
+""";
+
+export const TsOAuthAuth = """
+import { connect, OAuthHeaderProvider } from "@lancedb/lancedb";
+
+async function fetchToken() {
+  const accessToken = process.env.LANCEDB_OAUTH_ACCESS_TOKEN ?? "dummy-token";
+  return { accessToken, expiresIn: 3600 };
+}
+
+export async function connectWithOAuthHeaderProvider() {
+  const dbUri = process.env.LANCEDB_URI ?? "db://your-database-uri";
+  const region = process.env.LANCEDB_REGION ?? "us-east-1";
+
+  const headerProvider = new OAuthHeaderProvider(fetchToken, {
+    refreshBufferSeconds: 300,
+  });
+
+  const db = await connect(dbUri, {
+    region,
+    headerProvider,
+  });
+
+  return db;
+}
+""";
