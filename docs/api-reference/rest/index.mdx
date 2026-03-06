@@ -20,10 +20,18 @@ please [contact us](mailto:support@lancedb.com).
 <Badge color="blue">Cloud</Badge>
 <Badge color="red">Enterprise</Badge>
 
-All HTTP requests to LanceDB APIs must contain an <u>x-api-key</u> header that specifies a valid API key and
-must be encoded as JSON or Arrow RPC.
+LanceDB supports two primary authentication mechanisms for its Cloud and Enterprise APIs:
 
-The tutorial below demonstrates how to connect to LanceDB Cloud using the REST API.
+- **API key authentication** using an <u>x-api-key</u> header.
+- **OAuth/Bearer token authentication** using an <u>Authorization</u> header with a <code>Bearer &lt;token&gt;</code> value.
+
+All HTTP requests to LanceDB APIs must be authenticated and must be encoded as JSON or Arrow RPC.
+
+### Using API keys (x-api-key)
+
+This is the simplest option and is recommended for quick starts, prototypes, and environments where long-lived API keys are acceptable.
+
+The tutorial below demonstrates how to connect to LanceDB Cloud using the REST API with an <u>x-api-key</u> header.
 
 ### Get the API Key
 
@@ -70,6 +78,17 @@ You can always check from the LanceDB Cloud Dashboard:
 
 That's it -- you're connected! Now, you can start adding data and querying it.
 You can visit the tutorial section to build your own applications with LanceDB.
+
+### Using OAuth/Bearer tokens with the SDKs
+
+For production deployments that rely on OAuth, SSO/IDP integration, or rotating credentials, you can authenticate using Bearer tokens instead of long-lived API keys.
+
+We recommend using the Python and TypeScript SDKs' header provider abstractions to manage token refresh and inject an <u>Authorization: Bearer &lt;token&gt;</u> header on every request:
+
+- **Python**: `OAuthProvider` in `lancedb.remote.header` accepts a `token_fetcher` function that returns `{"access_token": "...", "expires_in": <seconds>}` and automatically refreshes the token before expiry.
+- **TypeScript**: `OAuthHeaderProvider` exported from `@lancedb/lancedb` accepts a sync or async token-fetching function that returns `{ accessToken, expiresIn? }` and automatically refreshes the token with a configurable buffer (default 5 minutes).
+
+Code examples showing how to connect to LanceDB Cloud with OAuth/Bearer tokens are available in the SDK guides and are sourced from tested snippets (see `/snippets/oauth_header_provider.mdx`).
 
 <Card
    title="Tutorials"
