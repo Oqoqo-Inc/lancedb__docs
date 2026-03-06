@@ -64,7 +64,7 @@ LanceDB supports AWS S3 (and compatible stores), Azure Blob Storage, and Google 
 
 ### Configuration options
 
-When running inside the target cloud with correct IAM bindings, LanceDB often needs no extra configuration. When running elsewhere, provide credentials via environment variables or `storage_options`.
+When running inside the target cloud with correct IAM bindings, LanceDB often needs no extra configuration. When running elsewhere, provide credentials via environment variables, `storage_options`, or a `storage_options_provider` for automatically refreshed credentials.
 
 <CodeGroup>
     <CodeBlock language="Python" title="Set a request timeout" icon="python">
@@ -90,6 +90,8 @@ If you need the option to apply only to a specific table:
     </CodeBlock>
 </CodeGroup>
 
+When using table-level configuration in combination with a `storage_options_provider`, LanceDB will always prefer options returned by the provider and fall back to any static `storage_options` only when the provider is not set.
+
 #### General object store options
 
 | Key | Description |
@@ -103,11 +105,21 @@ If you need the option to apply only to a specific table:
 | `proxy_ca_certificate` | PEM-formatted CA certificate for proxy connections. |
 | `proxy_excludes` | Comma-separated hosts that bypass the proxy (domains or CIDR). |
 
+### Dynamic credentials with storage_options_provider
+
+For production deployments that use temporary or rotating credentials (for example STS, service accounts, or short-lived tokens), pass a `storage_options_provider` instead of static `storage_options`. The provider exposes a `fetch_storage_options()` method that LanceDB calls whenever it needs fresh credentials.
+
+In Python, any object with a `fetch_storage_options()` method returning a `Dict[str, str]` can be used as a provider, and the same provider instance can be shared across `create_table()` and `open_table()` calls.
+
+The LanceDB Cloud namespace integration uses a built-in provider, `LanceNamespaceStorageOptionsProvider`, which pulls time-limited storage options from the namespace service on each refresh.
+
 ## AWS S3
 
 ![](/static/assets/images/storage/aws.jpg)
 
 Set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and optionally `AWS_SESSION_TOKEN` as environment variables or pass them in `storage_options`. Region is optional for AWS but required for most S3-compatible stores.
+
+When using temporary security credentials (for example STS session tokens that expire after a few minutes), prefer a `storage_options_provider` that knows how to obtain fresh credentials instead of hard-coding them in `storage_options`.
 
 Minimum permissions usually include `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`, `s3:ListBucket`, and `s3:GetBucketLocation` scoped to the relevant bucket/prefix.
 
@@ -162,6 +174,8 @@ LanceDB aborts multipart uploads on graceful shutdown, but crashes can leave inc
 
 Provide credentials via `GOOGLE_SERVICE_ACCOUNT` (path to JSON) or include the path in `storage_options`. GCS defaults to HTTP/1; set `HTTP1_ONLY=false` if you need HTTP/2.
 
+If you use short-lived service account credentials (for example via workload identity), wire the refresh logic into a `storage_options_provider` so LanceDB can re-fetch credentials without restarting your application.
+
 <CodeGroup>
     <CodeBlock language="Python" title="Connect with a service account" icon="python">
     {PyStorageGcsServiceAccount}
@@ -176,6 +190,8 @@ Provide credentials via `GOOGLE_SERVICE_ACCOUNT` (path to JSON) or include the p
 ![](/static/assets/images/storage/azure.jpg)
 
 Set `AZURE_STORAGE_ACCOUNT_NAME` and `AZURE_STORAGE_ACCOUNT_KEY` as environment variables, or pass them via `storage_options`.
+
+For deployments that rely on expiring SAS tokens, service principals, or managed identities, implement a `storage_options_provider` that fetches new tokens on demand and returns them from `fetch_storage_options()`.
 
 <CodeGroup>
     <CodeBlock language="Python" title="Connect to Azure Blob Storage" icon="python">
@@ -204,4 +220,6 @@ Tigris exposes an S3-compatible API. Configure the endpoint and region:
 </CodeGroup>
 
 Environment variables `AWS_ENDPOINT=https://t3.storage.dev` and `AWS_DEFAULT_REGION=auto` achieve the same configuration.
+
+Tigris credentials can also be supplied via a `storage_options_provider` for environments where keys or tokens rotate frequently.
 
