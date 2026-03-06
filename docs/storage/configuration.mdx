@@ -33,6 +33,21 @@ When using LanceDB OSS, you can choose where to store your data. The tradeoffs b
 
 ## Object stores
 
+### Dynamic and expiring credentials
+
+In production environments that rely on temporary or automatically rotated cloud credentials (for example IAM roles, STS tokens, or short‑lived service account keys), using a static `storage_options` dictionary can lead to expired credentials and intermittent failures.
+
+LanceDB supports **dynamic credential refresh** through storage option providers:
+
+- **Python**: pass a `storage_options_provider` when creating or opening a table. LanceDB will call `fetch_storage_options()` on this object whenever it needs fresh credentials.
+- **Rust**: pass a `storage_options_provider` to `create_table()` or `open_table()`; the provider is responsible for returning up‑to‑date storage options.
+
+At a minimum, a Python provider needs a `fetch_storage_options()` method that returns a flat `Dict[str, str]` of storage options (for example S3 keys, session tokens, or signed URLs). LanceDB will reuse the returned options until they expire, then call the provider again.
+
+The LanceDB Python SDK includes a built‑in `LanceNamespaceStorageOptionsProvider` that fetches **time‑limited** storage options from a running [Lance Namespace](/cloud/namespaces) service. It uses the namespace’s `describe_table()` API under the hood and automatically refreshes credentials as they expire.
+
+When you integrate with other credential systems (for example an internal metadata service), you can implement a similar provider that talks to your service, converts the response into the expected `Dict[str, str]` shape, and returns it from `fetch_storage_options()`.
+
 LanceDB supports AWS S3 (and compatible stores), Azure Blob Storage, and Google Cloud Storage. The URI scheme in your `connect` call selects the backend.
 
 <CodeGroup>
@@ -89,6 +104,63 @@ If you need the option to apply only to a specific table:
     {TsStorageTableTimeout}
     </CodeBlock>
 </CodeGroup>
+
+### Dynamic credential refresh in Python
+
+For temporary or automatically rotated credentials, implement a small provider class with a `fetch_storage_options()` method and pass it to table APIs via `storage_options_provider`:
+
+```python
+import datetime
+from typing import Dict
+
+import lancedb
+from lancedb.storage import StorageOptionsProvider
+
+class MyDynamicStorageOptionsProvider(StorageOptionsProvider):
+    """Fetch fresh, time-limited storage options from an external service."""
+
+    def fetch_storage_options(self) -> Dict[str, str]:
+        # 1. Call your internal credential service (STS, metadata server, etc.)
+        # 2. Convert its response into a flat Dict[str, str]
+        # 3. Optionally include an "expires_at_millis" key to control refresh
+        return {
+            "aws_access_key_id": "...",
+            "aws_secret_access_key": "...",
+            "aws_session_token": "...",
+            # Expire these options 10 minutes from now
+            "expires_at_millis": str(
+                int(
+                    (
+                        datetime.datetime.utcnow()
+                        + datetime.timedelta(minutes=10)
+                    ).timestamp()
+                    * 1000
+                )
+            ),
+        }
+
+db = lancedb.connect("s3://my-bucket/my-database")
+
+provider = MyDynamicStorageOptionsProvider()
+table = db.create_table(
+    "events",
+    data=[{"id": 1, "text": "hello"}],
+    storage_options_provider=provider,
+)
+```
+
+You can also pass the provider when opening an existing table:
+
+```python
+table = db.open_table(
+    "events",
+    storage_options_provider=provider,
+)
+```
+
+The built-in `LanceNamespaceStorageOptionsProvider` implements the same
+interface and is used internally by namespace-based connections to fetch
+time-limited storage options from a Lance Namespace service.
 
 #### General object store options
 
