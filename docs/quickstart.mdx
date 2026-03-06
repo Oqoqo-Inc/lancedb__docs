@@ -65,6 +65,12 @@ you can use LanceDB Cloud, which provides managed infrastructure,
 security, and automatic backups. Simply replace the local path with a remote `uri`
 that points to where your data is stored, and you're ready to go.
 
+For production deployments that rely on OAuth/SSO or other rotating
+credentials, you can also configure the SDKs to send an
+`Authorization: Bearer` header via a header provider, on top of the
+required `x-api-key`. This keeps token refresh logic in one place while
+all client calls continue to use the standard `connect` API.
+
 <CodeGroup >
     <CodeBlock filename="Python" language="Python" icon="python">
     {PyConnectCloud}

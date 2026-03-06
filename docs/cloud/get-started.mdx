@@ -29,8 +29,15 @@ npm install @lancedb/lancedb
 
 ## 2. Connect to LanceDB
 
-- For [LanceDB Cloud](/cloud/) users, the database URI (which starts with `db://`) and API key can both be retrieved from the LanceDB Cloud UI. 
+- For [LanceDB Cloud](/cloud/) users, the database URI (which starts with `db://`) and API key can both be retrieved from the LanceDB Cloud UI.
 - For [LanceDB Enterprise](/enterprise/) users, please [contact us](mailto:contact@lancedb.com) to obtain your database URI, API key, and `host_override` URL.
+
+<Info>
+For Enterprise and SSO/IDP-backed deployments where your access token rotates
+frequently, you can combine the required `x-api-key` header with an
+`Authorization: Bearer` token managed by the SDKs. See the Python and
+TypeScript examples below for a typical pattern.
+</Info>
 
 <CodeGroup>
 ```py Python icon=Python

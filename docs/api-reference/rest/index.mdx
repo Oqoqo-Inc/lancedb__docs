@@ -20,8 +20,14 @@ please [contact us](mailto:support@lancedb.com).
 <Badge color="blue">Cloud</Badge>
 <Badge color="red">Enterprise</Badge>
 
-All HTTP requests to LanceDB APIs must contain an <u>x-api-key</u> header that specifies a valid API key and
+All HTTP requests to LanceDB Cloud and Enterprise APIs must contain an <u>x-api-key</u> header that specifies a valid API key and
 must be encoded as JSON or Arrow RPC.
+
+For workloads that use OAuth-based authentication (for example SSO/IDP integration or
+service-to-service credentials that rotate frequently), you can also send a standard
+`Authorization: Bearer` header alongside the `x-api-key`. When you use the Python or
+TypeScript SDKs, LanceDB provides header provider helpers that take care of automatic
+token refresh and concurrency for you.
 
 The tutorial below demonstrates how to connect to LanceDB Cloud using the REST API.
 
