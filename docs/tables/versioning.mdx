@@ -16,6 +16,30 @@ import {
     PyVersioningDeleteData as VersioningDeleteData,
 } from '/snippets/tables.mdx';
 
+import {
+    TsVersioningBasicSetup as TsVersioningBasicSetup,
+    TsVersioningCheckInitialVersion as TsVersioningCheckInitialVersion,
+    TsVersioningUpdateData as TsVersioningUpdateData,
+    TsVersioningAddData as TsVersioningAddData,
+    TsVersioningCheckVersionsAfterMod as TsVersioningCheckVersionsAfterMod,
+    TsVersioningListAllVersions as TsVersioningListAllVersions,
+    TsVersioningRollback as TsVersioningRollback,
+    TsVersioningCheckoutLatest as TsVersioningCheckoutLatest,
+    TsVersioningDeleteData as TsVersioningDeleteData,
+} from '/snippets/tables.mdx';
+
+import {
+    RsVersioningBasicSetup as RsVersioningBasicSetup,
+    RsVersioningCheckInitialVersion as RsVersioningCheckInitialVersion,
+    RsVersioningUpdateData as RsVersioningUpdateData,
+    RsVersioningAddData as RsVersioningAddData,
+    RsVersioningCheckVersionsAfterMod as RsVersioningCheckVersionsAfterMod,
+    RsVersioningListAllVersions as RsVersioningListAllVersions,
+    RsVersioningRollback as RsVersioningRollback,
+    RsVersioningCheckoutLatest as RsVersioningCheckoutLatest,
+    RsVersioningDeleteData as RsVersioningDeleteData,
+} from '/snippets/tables.mdx';
+
 LanceDB redefines data management for AI/ML workflows with built-in, 
 automatic versioning powered by the [Lance columnar format](https://github.com/lancedb/lance). 
 Every table mutation—appends, updates, deletions, or schema changes — is tracked with 
@@ -38,6 +62,12 @@ First, let's create a table with some sample data:
     <CodeBlock filename="Python" language="Python" icon="python">
     {VersioningBasicSetup}
     </CodeBlock>
+    <CodeBlock filename="TypeScript" language="TypeScript" icon="typescript">
+    {TsVersioningBasicSetup}
+    </CodeBlock>
+    <CodeBlock filename="Rust" language="Rust" icon="rust">
+    {RsVersioningBasicSetup}
+    </CodeBlock>
 </CodeGroup>
 
 ### Checking Initial Version
@@ -47,6 +77,12 @@ After creating the table, let's check the initial version information:
 <CodeGroup>
     <CodeBlock filename="Python" language="Python" icon="python">
     {VersioningCheckInitialVersion}
+    </CodeBlock>
+    <CodeBlock filename="TypeScript" language="TypeScript" icon="typescript">
+    {TsVersioningCheckInitialVersion}
+    </CodeBlock>
+    <CodeBlock filename="Rust" language="Rust" icon="rust">
+    {RsVersioningCheckInitialVersion}
     </CodeBlock>
 </CodeGroup>
 
@@ -62,6 +98,12 @@ Let's update some existing records to see versioning in action:
     <CodeBlock filename="Python" language="Python" icon="python">
     {VersioningUpdateData}
     </CodeBlock>
+    <CodeBlock filename="TypeScript" language="TypeScript" icon="typescript">
+    {TsVersioningUpdateData}
+    </CodeBlock>
+    <CodeBlock filename="Rust" language="Rust" icon="rust">
+    {RsVersioningUpdateData}
+    </CodeBlock>
 </CodeGroup>
 
 ### Adding New Data
@@ -72,6 +114,12 @@ Now let's add more records to the table:
     <CodeBlock filename="Python" language="Python" icon="python">
     {VersioningAddData}
     </CodeBlock>
+    <CodeBlock filename="TypeScript" language="TypeScript" icon="typescript">
+    {TsVersioningAddData}
+    </CodeBlock>
+    <CodeBlock filename="Rust" language="Rust" icon="rust">
+    {RsVersioningAddData}
+    </CodeBlock>
 </CodeGroup>
 
 ### Checking Version Changes
@@ -81,6 +129,12 @@ Let's see how the versions have changed after our modifications:
 <CodeGroup>
     <CodeBlock filename="Python" language="Python" icon="python">
     {VersioningCheckVersionsAfterMod}
+    </CodeBlock>
+    <CodeBlock filename="TypeScript" language="TypeScript" icon="typescript">
+    {TsVersioningCheckVersionsAfterMod}
+    </CodeBlock>
+    <CodeBlock filename="Rust" language="Rust" icon="rust">
+    {RsVersioningCheckVersionsAfterMod}
     </CodeBlock>
 </CodeGroup>
 
@@ -165,6 +219,12 @@ First, let's see all the versions we've created:
     <CodeBlock filename="Python" language="Python" icon="python">
     {VersioningListAllVersions}
     </CodeBlock>
+    <CodeBlock filename="TypeScript" language="TypeScript" icon="typescript">
+    {TsVersioningListAllVersions}
+    </CodeBlock>
+    <CodeBlock filename="Rust" language="Rust" icon="rust">
+    {RsVersioningListAllVersions}
+    </CodeBlock>
 </CodeGroup>
 
 ### Rolling Back to a Previous Version
@@ -174,6 +234,12 @@ Now let's roll back to before we added the vector column:
 <CodeGroup>
     <CodeBlock filename="Python" language="Python" icon="python">
     {VersioningRollback}
+    </CodeBlock>
+    <CodeBlock filename="TypeScript" language="TypeScript" icon="typescript">
+    {TsVersioningRollback}
+    </CodeBlock>
+    <CodeBlock filename="Rust" language="Rust" icon="rust">
+    {RsVersioningRollback}
     </CodeBlock>
 </CodeGroup>
 
@@ -248,6 +314,12 @@ First, let's return to the latest version:
     <CodeBlock filename="Python" language="Python" icon="python">
     {VersioningCheckoutLatest}
     </CodeBlock>
+    <CodeBlock filename="TypeScript" language="TypeScript" icon="typescript">
+    {TsVersioningCheckoutLatest}
+    </CodeBlock>
+    <CodeBlock filename="Rust" language="Rust" icon="rust">
+    {RsVersioningCheckoutLatest}
+    </CodeBlock>
 </CodeGroup>
 
 ### Deleting Data
@@ -257,6 +329,12 @@ Now let's delete some data to see how it affects versioning:
 <CodeGroup>
     <CodeBlock filename="Python" language="Python" icon="python">
     {VersioningDeleteData}
+    </CodeBlock>
+    <CodeBlock filename="TypeScript" language="TypeScript" icon="typescript">
+    {TsVersioningDeleteData}
+    </CodeBlock>
+    <CodeBlock filename="Rust" language="Rust" icon="rust">
+    {RsVersioningDeleteData}
     </CodeBlock>
 </CodeGroup>
 

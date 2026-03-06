@@ -100,3 +100,39 @@ export const PyVersioningRollback = "# Let's roll back to before we added the ve
 
 export const PyVersioningUpdateData = "# Update author names to be more specific\ntable.update(where=\"author='Richard'\", values={\"author\": \"Richard Daniel Sanchez\"})\nrows_after_update = table.count_rows()\nprint(f\"Number of rows after update: {rows_after_update}\")\n";
 
+export const TsVersioningAddData = "// Add more data\nconst moreData = [\n  { id: 4, author: 'Richard Daniel Sanchez', quote: \"That's the way the news goes!\" },\n  { id: 5, author: 'Morty', quote: 'Aww geez, Rick!' },\n];\nawait table.add(moreData);\n";
+
+export const TsVersioningBasicSetup = "import lancedb from 'vectordb';\n\n// Connect to LanceDB\nconst db = await lancedb.connect('data/sample-lancedb');\n\n// Create a table with initial data\nconst tableName = 'quotes_versioning_example';\nconst data = [\n  { id: 1, author: 'Richard', quote: 'Wubba Lubba Dub Dub!' },\n  { id: 2, author: 'Morty', quote: \"Rick, what's going on?\" },\n  { id: 3, author: 'Richard', quote: 'I turned myself into a pickle, Morty!' },\n];\n\nconst table = await db.createTable(tableName, data);\n";
+
+export const TsVersioningCheckInitialVersion = "// View the initial version\nconst versions = await table.listVersions();\nconsole.log(`Number of versions after creation: ${versions.length}`);\nconsole.log(`Current version: ${table.version}`);\n";
+
+export const TsVersioningCheckVersionsAfterMod = "// Check versions after modifications\nconst versions = await table.listVersions();\nconst versionCountAfterMod = versions.length;\nconst versionAfterMod = table.version;\nconsole.log(`Number of versions after modifications: ${versionCountAfterMod}`);\nconsole.log(`Current version: ${versionAfterMod}`);\n";
+
+export const TsVersioningCheckoutLatest = "// Go back to the latest version\nawait table.checkoutLatest();\n";
+
+export const TsVersioningDeleteData = "// Delete data from the table\nawait table.delete(\"author != 'Richard Daniel Sanchez'\");\nconst rowsAfterDeletion = await table.countRows();\nconsole.log(`Number of rows after deletion: ${rowsAfterDeletion}`);\n";
+
+export const TsVersioningListAllVersions = "// List all versions\nconst versions = await table.listVersions();\nfor (const v of versions) {\n  console.log(`Version ${v.version}, created at ${v.timestamp}`);\n}\n";
+
+export const TsVersioningRollback = "// Roll back to the version before embeddings were added\nawait table.restore(versionAfterMod);\n\n// Notice we have one more version now, not less!\nconst versions = await table.listVersions();\nconst versionCountAfterRollback = versions.length;\nconsole.log(`Total number of versions after rollback: ${versionCountAfterRollback}`);\n";
+
+export const TsVersioningUpdateData = "// Update author names to be more specific\nawait table.update({ where: \"author = 'Richard'\", values: { author: 'Richard Daniel Sanchez' } });\nconst rowsAfterUpdate = await table.countRows();\nconsole.log(`Number of rows after update: ${rowsAfterUpdate}`);\n";
+
+export const RsVersioningAddData = "// Add more data\nlet more_data = vec![\n    json!({ \"id\": 4, \"author\": \"Richard Daniel Sanchez\", \"quote\": \"That's the way the news goes!\" }),\n    json!({ \"id\": 5, \"author\": \"Morty\", \"quote\": \"Aww geez, Rick!\" }),\n];\n\ntable.add(&more_data, None).await?;\n";
+
+export const RsVersioningBasicSetup = "use lancedb::connect;\nuse serde_json::json;\n\n// Connect to LanceDB\nlet db = connect(\"data/sample-lancedb\").await?;\n\n// Create a table with initial data\nlet table_name = \"quotes_versioning_example\";\nlet data = vec![\n    json!({ \"id\": 1, \"author\": \"Richard\", \"quote\": \"Wubba Lubba Dub Dub!\" }),\n    json!({ \"id\": 2, \"author\": \"Morty\", \"quote\": \"Rick, what's going on?\" }),\n    json!({ \"id\": 3, \"author\": \"Richard\", \"quote\": \"I turned myself into a pickle, Morty!\" }),\n];\n\nlet table = db.create_table(table_name, &data, None).await?;\n";
+
+export const RsVersioningCheckInitialVersion = "// View the initial version\nlet versions = table.list_versions().await?;\nprintln!(\"Number of versions after creation: {}\", versions.len());\nprintln!(\"Current version: {}\", table.version());\n";
+
+export const RsVersioningCheckVersionsAfterMod = "// Check versions after modifications\nlet versions = table.list_versions().await?;\nlet version_count_after_mod = versions.len();\nlet version_after_mod = table.version();\nprintln!(\"Number of versions after modifications: {}\", version_count_after_mod);\nprintln!(\"Current version: {}\", version_after_mod);\n";
+
+export const RsVersioningCheckoutLatest = "// Go back to the latest version\ntable.checkout_latest().await?;\n";
+
+export const RsVersioningDeleteData = "// Delete data from the table\ntable.delete(\"author != 'Richard Daniel Sanchez'\").await?;\nlet rows_after_deletion = table.count_rows(None).await?;\nprintln!(\"Number of rows after deletion: {}\", rows_after_deletion);\n";
+
+export const RsVersioningListAllVersions = "// List all versions\nlet versions = table.list_versions().await?;\nfor v in versions {\n    println!(\"Version {}, created at {}\", v.version, v.timestamp);\n}\n";
+
+export const RsVersioningRollback = "// Roll back to the version before embeddings were added\ntable.restore(version_after_mod).await?;\n\n// Notice we have one more version now, not less!\nlet versions = table.list_versions().await?;\nlet version_count_after_rollback = versions.len();\nprintln!(\"Total number of versions after rollback: {}\", version_count_after_rollback);\n";
+
+export const RsVersioningUpdateData = "// Update author names to be more specific\ntable\n    .update(\"author = 'Richard'\", json!({ \"author\": \"Richard Daniel Sanchez\" }))\n    .await?;\nlet rows_after_update = table.count_rows(None).await?;\nprintln!(\"Number of rows after update: {}\", rows_after_update);\n";
+
