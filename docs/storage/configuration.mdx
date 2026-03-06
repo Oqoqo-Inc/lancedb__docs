@@ -35,6 +35,63 @@ When using LanceDB OSS, you can choose where to store your data. The tradeoffs b
 
 LanceDB supports AWS S3 (and compatible stores), Azure Blob Storage, and Google Cloud Storage. The URI scheme in your `connect` call selects the backend.
 
+### Dynamic storage options for temporary credentials
+
+In production environments that use short‑lived or rotating cloud credentials (for example STS, federation, or workload identity), pass a `storage_options_provider` instead of static `storage_options`.
+
+The provider is responsible for returning fresh storage options each time LanceDB needs to access the table.
+
+<CodeGroup>
+    <CodeBlock language="Python" title="Custom storage options provider" icon="python">
+    {`
+import lancedb
+from typing import Dict
+
+
+class MyStorageOptionsProvider:
+    """Fetch fresh, time‑limited storage options."""
+
+    def fetch_storage_options(self) -> Dict[str, str]:
+        # Call your internal metadata or secrets service here
+        # and return a flat dict of string keys and values.
+        # The dict can include an "expires_at_millis" key that
+        # LanceDB uses to decide when to refresh credentials.
+        return {
+            "aws_access_key_id": "...",
+            "aws_secret_access_key": "...",
+            "aws_session_token": "...",
+            # Optional: epoch millis when these options expire
+            # "expires_at_millis": "1735689600000",
+        }
+
+
+provider = MyStorageOptionsProvider()
+
+db = lancedb.connect(
+    "s3://bucket/path",
+    storage_options_provider=provider,
+)
+
+# Table‑level providers are also supported
+# (overrides the connection‑level provider for this table only)
+my_table = db.create_table(
+    "my_table",
+    data=[{"id": 1, "text": "hello"}],
+    storage_options_provider=provider,
+)
+
+my_table = db.open_table(
+    "my_table",
+    storage_options_provider=provider,
+)
+    `}
+    </CodeBlock>
+</CodeGroup>
+
+LanceDB will call `fetch_storage_options()` whenever the current options are about to expire. If you include an `expires_at_millis` key (milliseconds since Unix epoch) in the returned dict, LanceDB uses that value to schedule refreshes.
+
+The same pattern is available in the Rust API via the `storage_options_provider` parameter on `create_table` and `open_table`.
+
 <CodeGroup>
     <CodeBlock language="Python" title="AWS S3" icon="python">
     {PyStorageConnectS3}
