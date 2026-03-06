@@ -66,6 +66,8 @@ LanceDB supports AWS S3 (and compatible stores), Azure Blob Storage, and Google 
 
 When running inside the target cloud with correct IAM bindings, LanceDB often needs no extra configuration. When running elsewhere, provide credentials via environment variables or `storage_options`.
 
+For production workloads that rely on time-limited or automatically rotated credentials (for example IAM roles, workload identity, or short-lived access tokens), LanceDB supports **dynamic storage options providers** in addition to static `storage_options` dictionaries.
+
 <CodeGroup>
     <CodeBlock language="Python" title="Set a request timeout" icon="python">
     {PyStorageConnectTimeout}
@@ -89,6 +91,48 @@ If you need the option to apply only to a specific table:
     {TsStorageTableTimeout}
     </CodeBlock>
 </CodeGroup>
+
+### Dynamic storage options providers (temporary credentials)
+
+For environments where credentials expire periodically, you can pass a **`StorageOptionsProvider`** instead of a static `storage_options` dictionary. LanceDB will call `fetch_storage_options()` whenever it needs fresh credentials.
+
+In Python, `create_table()` and `open_table()` accept a `storage_options_provider` argument:
+
+```python
+import lancedb
+from lancedb.io import StorageOptionsProvider
+
+class RotatingCredentialsProvider(StorageOptionsProvider):
+    """Example provider that returns time-limited cloud credentials."""
+
+    def fetch_storage_options(self) -> dict[str, str]:
+        # Replace this with your own credential refresh logic
+        creds = get_temporary_credentials_from_your_idp()
+        return {
+            "access_key_id": creds.access_key,
+            "secret_access_key": creds.secret_key,
+            "session_token": creds.session_token,
+            # Optional: tell LanceDB when to refresh again (milliseconds since epoch)
+            "expires_at_millis": str(creds.expires_at_millis),
+        }
+
+provider = RotatingCredentialsProvider()
+
+# Pass the provider when creating or opening a table
+
+db = lancedb.connect("s3://bucket/path")
+table = db.create_table(
+    "events",
+    data=[{"id": 1, "vector": [1.0, 2.0]}],
+    storage_options_provider=provider,
+)
+```
+
+LanceDB automatically calls `fetch_storage_options()` and refreshes credentials before they expire.
+
+When using [Lance Namespace](https://github.com/lancedb/lance-namespace), you can use the built-in `LanceNamespaceStorageOptionsProvider`, which pulls time-limited credentials from the namespace service (see `lancedb.namespace.LanceNamespaceStorageOptionsProvider`).
+
+The Rust client exposes a similar mechanism: the table builder APIs accept a `storage_options_provider` parameter that implements the `StorageOptionsProvider` trait, allowing you to fetch and refresh temporary credentials in Rust.
 
 #### General object store options
 
