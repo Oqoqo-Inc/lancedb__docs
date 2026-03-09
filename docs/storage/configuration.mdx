@@ -33,6 +33,75 @@ When using LanceDB OSS, you can choose where to store your data. The tradeoffs b
 
 ## Object stores
 
+### Dynamic storage options for temporary credentials
+
+In production, you often authenticate with short-lived credentials from an identity provider or metadata service instead of long-lived access keys.
+
+LanceDB supports this with a **storage options provider** that refreshes credentials on demand. Instead of passing a static `storage_options` dictionary, you pass an object with a `fetch_storage_options()` method.
+
+When LanceDB needs to perform I/O, it calls `fetch_storage_options()` and uses the returned dictionary, so you can rotate or refresh credentials transparently.
+
+#### Python
+
+```python
+import lancedb
+from typing import Dict, Any
+
+
+class MyStorageOptionsProvider:
+    def fetch_storage_options(self) -> Dict[str, Any]:
+        # Replace this with your cloud-specific refresh logic
+        # (for example, call your IDP or metadata service to get
+        # a fresh set of time-limited credentials).
+        return {
+            "aws_access_key_id": "<temporary-access-key>",
+            "aws_secret_access_key": "<temporary-secret-key>",
+            "aws_session_token": "<temporary-session-token>",
+        }
+
+
+provider = MyStorageOptionsProvider()
+
+db = lancedb.connect(
+    "s3://bucket/path",
+    storage_options_provider=provider,
+)
+
+table = db.create_table("my_table", data, storage_options_provider=provider)
+existing = db.open_table("my_table", storage_options_provider=provider)
+```
+
+#### Rust
+
+In Rust, pass a storage options provider when opening or creating a table. The provider is called whenever LanceDB needs to refresh storage credentials.
+
+```rust
+use lancedb::connect;
+// use your own type that implements the appropriate trait for
+// fetching storage options from your credential source.
+
+# fn main() -> lancedb::Result<()> {
+let db = connect("s3://bucket/path")
+    .storage_options_provider(/* your provider here */)
+    .execute()?;
+
+let table = db
+    .create_table("my_table", &data)
+    .storage_options_provider(/* your provider here */)
+    .execute()?;
+
+let existing = db
+    .open_table("my_table")
+    .storage_options_provider(/* your provider here */)
+    .execute()?;
+# Ok(())
+# }
+```
+
+For a concrete implementation, see the built-in `LanceNamespaceStorageOptionsProvider`, which fetches time-limited credentials from the namespace service (defined in the LanceDB codebase under `namespace.py`).
+
+### Object stores
+
 LanceDB supports AWS S3 (and compatible stores), Azure Blob Storage, and Google Cloud Storage. The URI scheme in your `connect` call selects the backend.
 
 <CodeGroup>
