@@ -65,3 +65,7 @@ Keep a copy of data in object storage for disaster recovery. If zero downtime is
 
 Use local disk only when you need extremely low latency and are comfortable owning the operational overhead.
 
+## Dynamic credentials with StorageOptionsProvider
+
+For production environments with temporary or expiring credentials, use `StorageOptionsProvider` for automatic credential refresh. See [Dynamic Credentials](/storage/dynamic-credentials) for details.
+

@@ -22,6 +22,14 @@ export const PyStorageTableTimeout = "table = db.create_table(\n    \"table\",\n
 
 export const PyStorageTigrisConnect = "db = lancedb.connect(\n    \"s3://your-bucket/path\",\n    storage_options={\n        \"endpoint\": \"https://t3.storage.dev\",\n        \"region\": \"auto\",\n    },\n)\n";
 
+export const PyStorageProviderCustom = "from lancedb.io import StorageOptionsProvider\n\nclass MyProvider(StorageOptionsProvider):\n    def fetch_storage_options(self) -> Dict[str, str]:\n        # Fetch fresh credentials from your credential manager\n        return {\n            \"aws_access_key_id\": \"...\",\n            \"aws_secret_access_key\": \"...\",\n            \"expires_at_millis\": \"1234567890000\"  # Optional\n        }\n\ndb = lancedb.connect(\n    \"s3://my-bucket/path\",\n    storage_options_provider=MyProvider(),\n)\n";
+
+export const PyStorageProviderWithCreateTable = "from lancedb.io import StorageOptionsProvider\n\nclass MyProvider(StorageOptionsProvider):\n    def fetch_storage_options(self) -> Dict[str, str]:\n        return {\n            \"aws_access_key_id\": \"...\",\n            \"aws_secret_access_key\": \"...\",\n            \"expires_at_millis\": \"1234567890000\"\n        }\n\nprovider = MyProvider()\ntable = db.create_table(\n    \"my_table\",\n    data,\n    storage_options_provider=provider,\n)\n";
+
+export const PyStorageProviderWithOpenTable = "from lancedb.io import StorageOptionsProvider\n\nclass MyProvider(StorageOptionsProvider):\n    def fetch_storage_options(self) -> Dict[str, str]:\n        return {\n            \"aws_access_key_id\": \"...\",\n            \"aws_secret_access_key\": \"...\",\n            \"expires_at_millis\": \"1234567890000\"\n        }\n\nprovider = MyProvider()\ntable = db.open_table(\"my_table\", storage_options_provider=provider)\n";
+
+export const PyStorageNamespaceProvider = "from lance_namespace import connect as namespace_connect\nfrom lancedb.namespace import LanceNamespaceStorageOptionsProvider\n\n# Connect to namespace\nnamespace = namespace_connect(\"rest\", {\"uri\": \"https://...\"})\n\n# Create a storage options provider\nprovider = LanceNamespaceStorageOptionsProvider(\n    namespace=namespace,\n    table_id=[\"my_namespace\", \"my_table\"]\n)\n\n# Use the provider with create_table or open_table\ndb.create_table(\"my_table\", data, storage_options_provider=provider)\n";
+
 export const TsStorageAzureAccount = "async function storageAzureAccount() {\n  const db = await lancedb.connect(\n    \"az://my-container/my-database\",\n    {\n      storageOptions: {\n        accountName: \"some-account\",\n        accountKey: \"some-key\",\n      },\n    },\n  );\n  return db;\n}\n";
 
 export const TsStorageConnectAzure = "async function storageConnectAzure() {\n  const db = await lancedb.connect(\"az://bucket/path\");\n  return db;\n}\n";
@@ -43,4 +51,6 @@ export const TsStorageS3Minio = "async function storageS3Minio() {\n  const db =
 export const TsStorageTableTimeout = "async function storageTableTimeout() {\n  const db = await lancedb.connect(\"s3://bucket/path\");\n  const table = await db.createTable(\n    \"table\",\n    [{ a: 1, b: 2 }],\n    { storageOptions: { timeout: \"60s\" } },\n  );\n  return table;\n}\n";
 
 export const TsStorageTigrisConnect = "async function storageTigrisConnect() {\n  const db = await lancedb.connect(\n    \"s3://your-bucket/path\",\n    {\n      storageOptions: {\n        endpoint: \"https://t3.storage.dev\",\n        region: \"auto\",\n      },\n    },\n  );\n  return db;\n}\n";
+
+export const TsStorageProviderCustom = "import * as lancedb from 'lancedb';\n\n// Note: TypeScript StorageOptionsProvider requires implementing the interface\n// This is typically done via JavaScript interop or custom provider class\nclass MyProvider implements lancedb.StorageOptionsProvider {\n  async fetchStorageOptions(): Promise<Record<string, string>> {\n    return {\n      aws_access_key_id: '...',\n      aws_secret_access_key: '...'\n    };\n  }\n}\n\nconst provider = new MyProvider();\nconst db = await lancedb.connect('s3://my-bucket/path', {\n  storageOptionsProvider: provider\n});\n";
 

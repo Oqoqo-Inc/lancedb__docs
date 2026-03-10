@@ -205,3 +205,31 @@ Tigris exposes an S3-compatible API. Configure the endpoint and region:
 
 Environment variables `AWS_ENDPOINT=https://t3.storage.dev` and `AWS_DEFAULT_REGION=auto` achieve the same configuration.
 
+## Dynamic credentials with StorageOptionsProvider
+
+For temporary or time-limited credentials (IAM roles, namespace-managed credentials, etc.), use `StorageOptionsProvider` instead of static `storage_options` dictionaries. The provider's `fetch_storage_options()` method is called automatically to refresh credentials before they expire.
+
+### Custom provider
+
+Implement a custom provider by subclassing `StorageOptionsProvider`:
+
+<CodeGroup>
+    <CodeBlock language="Python" title="Custom StorageOptionsProvider" icon="python">
+    {PyStorageProviderCustom}
+    </CodeBlock>
+</CodeGroup>
+
+Include `expires_at_millis` in the returned dictionary to enable automatic refresh.
+
+### Built-in namespace provider
+
+If you're using LanceDB Cloud or the namespace service, use `LanceNamespaceStorageOptionsProvider` to fetch time-limited credentials automatically:
+
+<CodeGroup>
+    <CodeBlock language="Python" title="LanceNamespaceStorageOptionsProvider" icon="python">
+    {PyStorageNamespaceProvider}
+    </CodeBlock>
+</CodeGroup>
+
+See the [Dynamic Credentials](/storage/dynamic-credentials) guide for complete examples and use cases.
+
