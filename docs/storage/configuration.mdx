@@ -11,6 +11,9 @@ import {
     PyStorageConnectS3,
     PyStorageConnectTimeout,
     PyStorageGcsServiceAccount,
+    PyStorageProviderCreateTable,
+    PyStorageProviderCustom,
+    PyStorageProviderOpenTable,
     PyStorageS3Ddb,
     PyStorageS3Express,
     PyStorageS3Minio,
@@ -204,4 +207,34 @@ Tigris exposes an S3-compatible API. Configure the endpoint and region:
 </CodeGroup>
 
 Environment variables `AWS_ENDPOINT=https://t3.storage.dev` and `AWS_DEFAULT_REGION=auto` achieve the same configuration.
+
+## Dynamic credentials
+
+Static `storage_options` work well for long-lived keys, but production workloads on AWS, GCP, or Azure often use short-lived credentials vended by a service (STS assume-role, Workload Identity, etc.). LanceDB supports automatic credential refresh through the `StorageOptionsProvider` interface.
+
+Implement `StorageOptionsProvider` and return fresh credentials from `fetch_storage_options()`. Include an `"expires_at_millis"` key (Unix milliseconds) to let LanceDB schedule a refresh before the credentials expire. Omit it if credentials never expire.
+
+<CodeGroup>
+    <CodeBlock language="Python" title="Define a custom provider" icon="python">
+    {PyStorageProviderCustom}
+    </CodeBlock>
+</CodeGroup>
+
+Pass the provider to `open_table` or `create_table` via the `storage_options_provider` parameter:
+
+<CodeGroup>
+    <CodeBlock language="Python" title="Open a table" icon="python">
+    {PyStorageProviderOpenTable}
+    </CodeBlock>
+</CodeGroup>
+
+<CodeGroup>
+    <CodeBlock language="Python" title="Create a table" icon="python">
+    {PyStorageProviderCreateTable}
+    </CodeBlock>
+</CodeGroup>
+
+<Info title="Provider identity and caching">
+Two provider instances that return the same `provider_id()` share the same cached object-store connection. Override `provider_id()` if you have multiple providers that differ only at runtime (for example, different IAM roles).
+</Info>
 

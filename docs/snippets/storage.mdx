@@ -12,6 +12,12 @@ export const PyStorageConnectTimeout = "db = lancedb.connect(\n    \"s3://bucket
 
 export const PyStorageGcsServiceAccount = "db = lancedb.connect(\n    \"gs://my-bucket/my-database\",\n    storage_options={\n        \"service_account\": \"path/to/service-account.json\",\n    },\n)\n";
 
+export const PyStorageProviderCreateTable = "table = db.create_table(\n    \"my_table\",\n    [{\"id\": 1, \"vec\": [1.0, 2.0]}],\n    storage_options_provider=MyCredentialProvider(),\n)\n";
+
+export const PyStorageProviderCustom = "from lancedb import StorageOptionsProvider\n\nclass MyCredentialProvider(StorageOptionsProvider):\n    def fetch_storage_options(self):\n        # In production, call your credential vending service here\n        return {\n            \"aws_access_key_id\": \"AKIAIOSFODNN7EXAMPLE\",\n            \"aws_secret_access_key\": \"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\",\n            \"aws_session_token\": \"AQoDYXdzEJr...\",\n            # LanceDB refreshes credentials automatically before this time\n            \"expires_at_millis\": \"9999999999000\",\n        }\n";
+
+export const PyStorageProviderOpenTable = "table = db.open_table(\"my_table\", storage_options_provider=MyCredentialProvider())\n";
+
 export const PyStorageS3Ddb = "db = lancedb.connect(\n    \"s3+ddb://bucket/path?ddbTableName=my-dynamodb-table\",\n)\n";
 
 export const PyStorageS3Express = "db = lancedb.connect(\n    \"s3://my-bucket--use1-az4--x-s3/path\",\n    storage_options={\n        \"region\": \"us-east-1\",\n        \"s3_express\": \"true\",\n    },\n)\n";

@@ -6,9 +6,10 @@ import pytest
 
 
 class DummyTable:
-    def __init__(self, name: str, storage_options: dict | None = None):
+    def __init__(self, name: str, storage_options: dict | None = None, storage_options_provider=None):
         self.name = name
         self.storage_options = storage_options
+        self.storage_options_provider = storage_options_provider
 
 
 class DummyConnection:
@@ -16,10 +17,16 @@ class DummyConnection:
         self.uri = uri
         self.options = options
         self.created_tables: list[DummyTable] = []
+        self.opened_tables: list[DummyTable] = []
 
-    def create_table(self, name: str, data, storage_options: dict | None = None):
-        table = DummyTable(name, storage_options=storage_options)
+    def create_table(self, name: str, data, storage_options: dict | None = None, storage_options_provider=None):
+        table = DummyTable(name, storage_options=storage_options, storage_options_provider=storage_options_provider)
         self.created_tables.append(table)
+        return table
+
+    def open_table(self, name: str, storage_options: dict | None = None, storage_options_provider=None):
+        table = DummyTable(name, storage_options=storage_options, storage_options_provider=storage_options_provider)
+        self.opened_tables.append(table)
         return table
 
 
@@ -124,3 +131,40 @@ def test_storage_snippets(fake_connect):
         conn.uri.startswith(("s3://", "gs://", "az://", "s3+ddb://"))
         for conn in fake_connect
     )
+
+
+def test_storage_options_provider(fake_connect):
+    # --8<-- [start:storage_provider_custom]
+    from lancedb import StorageOptionsProvider
+
+    class MyCredentialProvider(StorageOptionsProvider):
+        def fetch_storage_options(self):
+            # In production, call your credential vending service here
+            return {
+                "aws_access_key_id": "AKIAIOSFODNN7EXAMPLE",
+                "aws_secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                "aws_session_token": "AQoDYXdzEJr...",
+                # LanceDB refreshes credentials automatically before this time
+                "expires_at_millis": "9999999999000",
+            }
+    # --8<-- [end:storage_provider_custom]
+
+    db = lancedb.connect("s3://bucket/path")
+
+    # --8<-- [start:storage_provider_open_table]
+    table = db.open_table("my_table", storage_options_provider=MyCredentialProvider())
+    # --8<-- [end:storage_provider_open_table]
+
+    # --8<-- [start:storage_provider_create_table]
+    table = db.create_table(
+        "my_table",
+        [{"id": 1, "vec": [1.0, 2.0]}],
+        storage_options_provider=MyCredentialProvider(),
+    )
+    # --8<-- [end:storage_provider_create_table]
+
+    assert table.storage_options_provider is not None
+    assert isinstance(table.storage_options_provider, MyCredentialProvider)
+    options = table.storage_options_provider.fetch_storage_options()
+    assert options["aws_access_key_id"] == "AKIAIOSFODNN7EXAMPLE"
+    assert options["expires_at_millis"] == "9999999999000"
