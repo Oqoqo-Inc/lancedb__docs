@@ -11,6 +11,9 @@ import {
     PyStorageConnectS3,
     PyStorageConnectTimeout,
     PyStorageGcsServiceAccount,
+    PyStorageOptionsProviderBasic,
+    PyStorageOptionsProviderNamespace,
+    PyStorageOptionsProviderWithExpiration,
     PyStorageS3Ddb,
     PyStorageS3Express,
     PyStorageS3Minio,
@@ -22,6 +25,7 @@ import {
     TsStorageConnectS3,
     TsStorageConnectTimeout,
     TsStorageGcsServiceAccount,
+    TsStorageOptionsProviderBasic,
     TsStorageS3Ddb,
     TsStorageS3Express,
     TsStorageS3Minio,
@@ -204,4 +208,69 @@ Tigris exposes an S3-compatible API. Configure the endpoint and region:
 </CodeGroup>
 
 Environment variables `AWS_ENDPOINT=https://t3.storage.dev` and `AWS_DEFAULT_REGION=auto` achieve the same configuration.
+
+## Dynamic and Expiring Credentials
+
+For production environments with temporary or time-limited credentials, use a `StorageOptionsProvider` to automatically refresh credentials before they expire. This is essential for long-running processes using IAM roles, STS sessions, or namespace-managed credentials.
+
+<Info title="Provider types">
+- **Static credentials**: Use `storage_options` dictionary (shown above)
+- **Dynamic credentials**: Use `storage_options_provider` parameter with a custom provider
+</Info>
+
+### Python: Custom provider
+
+Implement `StorageOptionsProvider` and pass it to `create_table()` or `open_table()`:
+
+<CodeGroup>
+    <CodeBlock language="Python" title="Custom storage options provider" icon="python">
+    {PyStorageOptionsProviderBasic}
+    </CodeBlock>
+</CodeGroup>
+
+### Python: Provider with expiration
+
+Include `expires_at_millis` to enable automatic refresh:
+
+<CodeGroup>
+    <CodeBlock language="Python" title="Provider with expiration" icon="python">
+    {PyStorageOptionsProviderWithExpiration}
+    </CodeBlock>
+</CodeGroup>
+
+### Python: Namespace storage options provider
+
+Use `LanceNamespaceStorageOptionsProvider` to fetch time-limited credentials from the namespace service:
+
+<CodeGroup>
+    <CodeBlock language="Python" title="Namespace storage options provider" icon="python">
+    {PyStorageOptionsProviderNamespace}
+    </CodeBlock>
+</CodeGroup>
+
+### Rust: Storage options provider
+
+Implement the `StorageOptionsProvider` trait and pass it to the connection or read params:
+
+```rust
+use lancedb::StorageOptionsProvider;
+use std::sync::Arc;
+
+struct MyProvider;
+
+impl StorageOptionsProvider for MyProvider {
+    fn fetch_storage_options(&self) -> Result<std::collections::HashMap<String, String>> {
+        Ok([
+            ("aws_access_key_id".to_string(), "your-access-key".to_string()),
+            ("aws_secret_access_key".to_string(), "your-secret-key".to_string()),
+        ].into_iter().collect())
+    }
+}
+
+let db = lancedb::connect("s3://my-bucket/path")
+    .storage_options_provider(Arc::new(MyProvider))
+    .await?;
+```
+
+For more details, see the [dynamic credentials guide](/storage/dynamic-credentials).
 

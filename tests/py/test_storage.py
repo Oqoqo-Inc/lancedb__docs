@@ -119,7 +119,43 @@ def test_storage_snippets(fake_connect):
     )
     # --8<-- [end:storage_tigris_connect]
 
-    assert len(fake_connect) == 10
+    # --8<-- [start:storage_options_provider_basic]
+    from lancedb.io import StorageOptionsProvider
+
+    class MyCredentialProvider(StorageOptionsProvider):
+        def fetch_storage_options(self) -> dict:
+            return {
+                "aws_access_key_id": "your-access-key",
+                "aws_secret_access_key": "your-secret-key",
+                "region": "us-east-1",
+            }
+
+    db = lancedb.connect(
+        "s3://my-bucket/my-database",
+        storage_options_provider=MyCredentialProvider(),
+    )
+    # --8<-- [end:storage_options_provider_basic]
+
+    # --8<-- [start:storage_options_provider_expiration]
+    import time
+    from lancedb.io import StorageOptionsProvider
+
+    class ExpiringCredentialProvider(StorageOptionsProvider):
+        def fetch_storage_options(self) -> dict:
+            return {
+                "aws_access_key_id": "temporary-access-key",
+                "aws_secret_access_key": "temporary-secret-key",
+                "session_token": "temporary-session-token",
+                "expires_at_millis": str(int((time.time() + 3600) * 1000)),
+            }
+
+    db = lancedb.connect(
+        "s3://my-bucket/my-database",
+        storage_options_provider=ExpiringCredentialProvider(),
+    )
+    # --8<-- [end:storage_options_provider_expiration]
+
+    assert len(fake_connect) == 12
     assert all(
         conn.uri.startswith(("s3://", "gs://", "az://", "s3+ddb://"))
         for conn in fake_connect
