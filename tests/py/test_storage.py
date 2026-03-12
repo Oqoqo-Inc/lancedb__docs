@@ -4,6 +4,8 @@
 import lancedb
 import pytest
 
+from lancedb import StorageOptionsProvider
+
 
 class DummyTable:
     def __init__(self, name: str, storage_options: dict | None = None):
@@ -118,6 +120,73 @@ def test_storage_snippets(fake_connect):
         },
     )
     # --8<-- [end:storage_tigris_connect]
+
+    # --8<-- [start:storage_options_provider_temporary_creds]
+    class TemporaryCredentialProvider(StorageOptionsProvider):
+        """Example provider for short-lived cloud credentials.
+
+        In a real application, this class would call your IAM system or
+        cloud SDK (for example AWS STS, GCP STS, or Azure Managed Identity)
+        to fetch temporary credentials and their expiration time.
+        """
+
+        def __init__(self, role_arn: str, session_name: str):
+            self.role_arn = role_arn
+            self.session_name = session_name
+
+        def fetch_storage_options(self) -> dict[str, str]:
+            """Return storage options for the current session.
+
+            The optional "expires_at_millis" key tells LanceDB when these
+            options expire so it can refresh them automatically.
+            See `StorageOptionsProvider.fetch_storage_options` in
+            `lancedb/io.py` for details.
+            """
+
+            # In production code, replace this with a call to your
+            # cloud provider's SDK to assume a role or fetch a token.
+            # For example, with AWS STS you would return the access key,
+            # secret key, session token, and expiration time.
+            return {
+                "aws_access_key_id": "ACCESS_KEY_ID",
+                "aws_secret_access_key": "SECRET_ACCESS_KEY",
+                "aws_session_token": "SESSION_TOKEN",
+                # Unix timestamp in milliseconds for when the credentials expire.
+                "expires_at_millis": "1735689600000",
+            }
+
+        def provider_id(self) -> str:
+            """Stable identifier so LanceDB can cache connections.
+
+            Providers with the same `provider_id` share the same underlying
+            object store client. Include fields that uniquely identify the
+            source of credentials but avoid secrets.
+            """
+
+            return f"temporary-aws-role:{self.role_arn}:{self.session_name}"
+
+    db = lancedb.connect("s3://bucket/path")
+
+    # Use the provider when creating a table so LanceDB can refresh
+    # credentials transparently when they expire.
+    table = db.create_table(
+        "events",
+        [{"a": 1, "b": 2}],
+        storage_options_provider=TemporaryCredentialProvider(
+            role_arn="arn:aws:iam::123456789012:role/ExampleRole",
+            session_name="example-session",
+        ),
+    )
+
+    # You can also provide the same provider when opening a table.
+    table = db.open_table(
+        "events",
+        storage_options_provider=TemporaryCredentialProvider(
+            role_arn="arn:aws:iam::123456789012:role/ExampleRole",
+            session_name="example-session",
+        ),
+    )
+    # --8<-- [end:storage_options_provider_temporary_creds]
 
     assert len(fake_connect) == 10
     assert all(

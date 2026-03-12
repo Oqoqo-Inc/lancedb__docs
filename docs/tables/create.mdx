@@ -35,7 +35,9 @@ The Python SDK additionally supports:
 
 ## Create a LanceDB Table
 
-Initialize a LanceDB connection and create a table
+Initialize a LanceDB connection and create a table.
+
+If you use **short-lived or rotating cloud credentials**, you can also attach a `StorageOptionsProvider` when creating or opening tables. See [Dynamic / expiring credentials with StorageOptionsProvider](/storage/configuration#dynamic--expiring-credentials-with-storageoptionsprovider) for details.
 
 
 <CodeGroup>

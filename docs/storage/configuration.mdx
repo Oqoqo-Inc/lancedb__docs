@@ -11,6 +11,7 @@ import {
     PyStorageConnectS3,
     PyStorageConnectTimeout,
     PyStorageGcsServiceAccount,
+    PyStorageOptionsProviderTemporaryCreds,
     PyStorageS3Ddb,
     PyStorageS3Express,
     PyStorageS3Minio,
@@ -102,6 +103,64 @@ If you need the option to apply only to a specific table:
 | `proxy_url` | Proxy URL to route requests through. |
 | `proxy_ca_certificate` | PEM-formatted CA certificate for proxy connections. |
 | `proxy_excludes` | Comma-separated hosts that bypass the proxy (domains or CIDR). |
+
+## Dynamic / expiring credentials with StorageOptionsProvider
+
+For long-lived credentials, static `storage_options` dictionaries and environment variables are often sufficient. In production environments that rely on **short-lived or rotating credentials** (for example STS tokens or managed identities), you can use a `StorageOptionsProvider` to let LanceDB refresh credentials automatically.
+
+A `StorageOptionsProvider` is a small Python class (defined in `lancedb/io.py`) with two key methods:
+
+- `fetch_storage_options(self) -> dict[str, str]`
+  - Returns the current storage options (for example, temporary access keys and tokens).
+  - May include an optional `"expires_at_millis"` key with a Unix timestamp in **milliseconds**. When present, LanceDB refreshes the provider's storage options once they are near expiry.
+- `provider_id(self) -> str`
+  - Returns a stable identifier used to cache underlying object store clients. Providers with the same `provider_id` share the same connection.
+
+You can pass a provider to both `create_table()` and `open_table()`:
+
+<CodeGroup>
+    <CodeBlock language="Python" title="Dynamic credentials with StorageOptionsProvider" icon="python">
+    {PyStorageOptionsProviderTemporaryCreds}
+    </CodeBlock>
+</CodeGroup>
+
+This pattern is useful when your application needs to:
+
+- Assume a role or fetch a token per request.
+- Centralize credential fetching in a separate service.
+- Ensure tables remain readable/writable as credentials rotate.
+
+### Namespace-managed credentials
+
+If you use LanceDB's **namespace service**, you often do not need to configure a provider manually. When the namespace service returns `storage_options` for a table, the Python client automatically wraps them in a built-in `LanceNamespaceStorageOptionsProvider` (see `lancedb/namespace.py`).
+
+This provider:
+
+- Calls `namespace.describe_table()` to fetch updated `storage_options` whenever they expire.
+- Respects `"expires_at_millis"` when the namespace includes it, so LanceDB can refresh credentials before they become invalid.
+
+### Rust
+
+The Rust client exposes a similar concept via builders:
+
+- `CreateTableBuilder::storage_options_provider(...)`
+- `OpenTableBuilder::storage_options_provider(...)`
+
+These methods accept an implementation of the Rust `StorageOptionsProvider` trait. LanceDB refreshes storage options when they expire according to the provider implementation.
+
+A minimal example using the builder API looks like this:
+
+```rust
+let db = lancedb::connect("s3://bucket/path").await?;
+
+let table = db
+    .create_table("events", &data)
+    .storage_options_provider(my_provider)
+    .execute()
+    .await?;
+```
+
+Refer to the Rust API docs at https://docs.rs/lancedb/latest/lancedb/ for the full trait definition and examples.
 
 ## AWS S3
 
