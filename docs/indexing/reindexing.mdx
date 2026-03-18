@@ -44,3 +44,15 @@ The benefit of using LanceDB Cloud & Enterprise is that they automate the reinde
 and operate continuously in the background, minimizing the impact on latency under high loads.
 In OSS, you must manually manage the reindexing cadence based on your data growth and performance needs.
 </Tip>
+
+## Optimize safety and cleanup considerations
+
+The OSS `optimize()` call that supports incremental reindexing is the same `optimize(action=All)` entrypoint used throughout LanceDB. When you invoke `optimize()` with no arguments it:
+
+- **Compacts** small files into larger ones for faster reads.
+- **Prunes** old versions via `cleanup_old_versions`, which uses a 7-day default retention window and never deletes the latest version.
+- **Optimizes indices** with the default `OptimizeOptions`, which merges new data into the existing index structures.
+
+Because pruning is conservative by default, files created within the last 7 days (including ones left behind by failed transactions) are not removed unless you explicitly pass `cleanup_older_than=timedelta(days=0)` or `delete_unverified=True`. Only enable those overrides when you are confident no concurrent writes or unfinished transactions exist, otherwise in-progress operations may fail while primitives such as `compact`, `prune`, or `create_index` are also running.
+
+For most workloads it is safe to run `optimize()` immediately after a batch of inserts, updates, or index changes finishes; the operation is incremental and honours the existing index state. Dropping and re-creating an index before calling `optimize()` essentially builds that index from scratch, but the rest of the cleanup steps still behave the same. In short, `optimize()` works from the current dataset/version state and is not magically reset to a clean slate when you rebuild an index—you still need to ensure other operations have completed before the cleanup and compaction phases begin.
