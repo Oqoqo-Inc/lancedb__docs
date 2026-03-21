@@ -1,6 +1,6 @@
 # LanceDB Mintlify Documentation
 
-Home of the [LanceDB](https://lancedb.com/) documentation. Built using [Mintlify](https://www.mintlify.com/).
+Home of the [LanceDB](https://lancedb.com/) documentation. Built using [Mintlify](https://www.mintlify.com/). (Dummy test edit)
 
 ## Development
 
