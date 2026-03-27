@@ -19,7 +19,10 @@ and full-text search to combine the results. If you want to use the scores or wa
 `return_score="all"`, you'll need to implement your own merging algorithm.
 
 Below, we show the pseudocode of a custom reranker that combines the results of semantic and full-text
-search using a linear combination of the scores:
+search using a linear combination of the scores.
+
+> **Important:** `rerank_hybrid` **must** return a `pyarrow.Table` that contains a `_relevance_score` column.
+> LanceDB will validate this at runtime and raise an error if the column is missing.
 
 <CodeGroup>
 ```python Python icon="python"
@@ -36,10 +39,13 @@ class MyReranker(Reranker):
         # Use the built-in merging function
         combined_result = self.merge_results(vector_results, fts_results)
 
-        # Do something with the combined results
-        # ...
+        # Compute your relevance scores here and attach them
+        relevance_scores = ...  # 1D array-like of float scores
+        combined_result = combined_result.append_column(
+            "_relevance_score", pa.array(relevance_scores, type=pa.float32())
+        )
 
-        # Return the combined results
+        # Return the combined results with the required _relevance_score column
         return combined_result
 
     def rerank_vector(self, query: str, vector_results: pa.Table):
