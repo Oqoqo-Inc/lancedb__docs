@@ -1,0 +1,16 @@
+# Internal Gap Notes
+
+## P23: Session Turns and Session Management APIs Are Stranded Outside the Sessions Docs
+
+This note records that gap **P23** does **not** apply to this LanceDB workspace.
+
+- The gap describes missing documentation for **Phoenix** session management APIs and docs:
+  - JS client: `getSessionTurns`, `deleteSession`, `deleteSessions`, `logSessionAnnotations`
+  - Python client: `get_session_turns`, `delete`, `bulk_delete`
+  - Docs files: `sessions.mdx`, `setup-sessions.mdx`, `03-11-2026-session-turns-api.mdx`
+- This workspace contains only LanceDB repos:
+  - `code/lancedb__lancedb`
+  - `docs/lancedb__docs`
+- A search in this workspace finds **none** of the above Phoenix APIs or docs files.
+
+Conclusion: gap **P23** must be fixed in the **Phoenix** docs/code workspace that owns those session APIs and pages. No LanceDB product documentation changes are required here beyond this internal routing note.
